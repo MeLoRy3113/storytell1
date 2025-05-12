@@ -14,9 +14,7 @@
     {% for item in news %}
         <div class="col-md6 border rounded;" onclick="location.href='/story/{{ item.id }}';">
             <h2 style="width: 700px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">{{ item.title }}</h2>
-            <!-- <div>
-                {{ item.content }}
-            </div> -->
+            
             <div>
                 Автор - {{ item.user.name }}, Дата написания - {{ item.created_date }}
             </div>
