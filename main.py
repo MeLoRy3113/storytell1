@@ -47,14 +47,13 @@ def add_news():
         if form.file.data:
             file = form.file.data
             filename = secure_filename(file.filename)
-            upload_dir = os.path.join('static', 'uploads')  # Папка для загрузки
+            upload_dir = os.path.join('static', 'uploads')  
             os.makedirs(upload_dir, exist_ok=True)
             file_path = os.path.join(upload_dir, filename)
             file.save(file_path)
 
-            # Заменяем обратные слеши на обычные (для Windows)
             db_path = os.path.join('uploads', filename).replace('\\', '/')
-            news.file_path = db_path  # Теперь путь будет с '/'
+            news.file_path = db_path  
 
         current_user.news.append(news)
         db_sess.merge(current_user)
@@ -96,6 +95,16 @@ def edit_news(id):
             news.title = form.title.data
             news.content = form.content.data
             news.is_private = form.is_private.data
+            if form.file.data:
+                file = form.file.data
+                filename = secure_filename(file.filename)
+                upload_dir = os.path.join('static', 'uploads')  
+                os.makedirs(upload_dir, exist_ok=True)
+                file_path = os.path.join(upload_dir, filename)
+                file.save(file_path)
+                db_path = os.path.join('uploads', filename).replace('\\', '/')
+                news.file_path = db_path  
+            db_sess.merge(current_user)
             db_sess.commit()
             return redirect('/')
         else:
@@ -127,7 +136,6 @@ def reqister():
         user = User(
             name=form.name.data,
             email=form.email.data,
-            about=form.about.data
         )
         user.set_password(form.password.data)
         db_sess.add(user)
