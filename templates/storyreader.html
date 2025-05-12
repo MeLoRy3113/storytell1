@@ -1,0 +1,16 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+    <h1 style="margin-left: 3%; white-space: pre-wrap; word-wrap: break-word; max-width: 98%; margin-right: 2%;">{{ news.title }}</h1>
+    <p style="white-space: pre-wrap; word-wrap: break-word; max-width: 98%; margin-left: 2%; margin-right: 2%;">{{ news.content }}</p>
+    
+    {% if news.file_path %}
+        <h3>Прикрепленный файл:</h3>
+        {% if news.file_path.endswith(('.jpg', '.png', '.jpeg')) %}
+            <img src="{{ url_for('static', filename=news.file_path.replace('static/upload/', '')) }}" alt="Изображение" style="width: 600px;">
+        {% else %}
+            <a href="{{ url_for('static', filename=news.file_path.replace('static/upload/', '')) }}" download>Скачать файл</a>
+        {% endif %}
+    {% endif %}
+{% endblock %}
