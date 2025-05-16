@@ -5,29 +5,89 @@
     <a class="navbar-brand" style="margin-left:32px" href="/">Открытые посты</a> <br>
     <a class="navbar-brand" style="margin-left:50px" href="/yourstorys">Ваши посты</a>
 </nav>
+<div class="dropdown mb-4">
+        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Сортировать по
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item" href="{{ url_for('index', sort='newest') }}">Сначала новые</a>
+            <a class="dropdown-item" href="{{ url_for('index', sort='top') }}">Лучшие по рейтингу</a>
+        </div>
+    </div>
 <main role="main" class="container">
-    <h1>Записи в блоге</h1>
+    <style>
+        .story-container {
+            max-width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .news-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 15px 0;
+            line-height: 1.6;
+        }
+        
+        .rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 10px 0;
+        }
+        
+        .upvote, .downvote {
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        
+        .upvote:hover {
+            color: green;
+        }
+        
+        .downvote:hover {
+            color: red;
+        }
+        
+        .sort-buttons {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+    <h1>Все рассказы</h1>
     {% if current_user.is_authenticated %}
         <a href="addstory" class="btn btn-secondary">Добавить рассказ</a>
     {% endif %}
     <p></p>
-    {% for item in news %}
-    {% if current_user.is_authenticated and current_user == item.user %}
-        <div class="col-md6 border rounded;" onclick="location.href='/story/{{ item.id }}';">
-            
-            <h2 style="width: 700px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">{{ item.title }}</h2>
-            
-            <div>
-                Автор - {{ item.user.name }}, Дата написания - {{ item.created_date }}
-            </div>
-            
-                <div>
-                    <a href="/storyedit/{{ item.id }}" class="btn btn-primary">Изменить</a>
-                    <a href="/story_delete/{{ item.id }}" class="btn btn-danger">Удалить</a>
-                </div>
-            
+{% for news_item in news %}
+    {% if current_user.is_authenticated and current_user == news_item.user %}
+    <div class="col-md6 border rounded;" onclick="location.href='/story/{{ news_item.id }}';">
+        <h3><a>{{ news_item.title }}</a></h3>
+        
+        <div class="news-content">{{ news_item.content|truncate(200) }}</div>
+        
+        <div class="rating">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('rate', news_id=news_item.id, value=1) }}">+</a>
+            {% endif %}
+            <span>Рейтинг: {{ news_item.rating_score() }}</span>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('rate', news_id=news_item.id, value=-1) }}">-</a>
+            {% endif %}
         </div>
-        {% endif %}
-    {% endfor %}
-</main>
+        
+        <div class="news-meta">
+            Автор: {{ news_item.user.name }} | 
+            Дата: {{ news_item.created_date.strftime('%d.%m.%Y') }}
+        </div>
+    </div>
+    {% endif %}
+{% endfor %}
+</body>
+</html>
 {% endblock %}
