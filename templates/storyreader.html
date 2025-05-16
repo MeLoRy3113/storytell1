@@ -1,10 +1,50 @@
-
 {% extends "base.html" %}
 
+<style>
+    .story-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .news-content {
+        white-space: pre-wrap;
+        margin: 20px 0;
+        line-height: 1.6;
+    }
+    a {
+        color: #0066cc;
+        text-decoration: none;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+</style>
+
 {% block content %}
-    <h1 style="margin-left: 3%; white-space: pre-wrap; word-wrap: break-word; max-width: 98%; margin-right: 2%;">{{ news.title }}</h1>
-    <p style="white-space: pre-wrap; word-wrap: break-word; max-width: 98%; margin-left: 2%; margin-right: 2%;">{{ news.content }}</p>
-    
+    <div class="story-container">
+        <h1>{{ news.title }}</h1>
+        
+        <div class="news-content">{{ news.content }}</div>
+        
+        <div class="rating">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('rate', news_id=news.id, value=1) }}">+</a>
+            {% endif %}
+            <span>Рейтинг: {{ news.rating_score() }}</span>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('rate', news_id=news.id, value=-1) }}">-</a>
+            {% endif %}
+        </div>
+        
+        <div class="news-meta">
+            Автор: {{ news.user.name }} | 
+            Дата: {{ news.created_date.strftime('%d.%m.%Y %H:%M') }} |
+            
+            {% if current_user.is_authenticated and current_user == news.user %}
+                <a href="{{ url_for('edit_news', id=news.id) }}">Редактировать</a> |
+                <a href="{{ url_for('news_delete', id=news.id) }}">Удалить</a>
+            {% endif %}
+        </div>
     {% if news.file_path %}
         <h3>Прикрепленный файл:</h3>
         {% if news.file_path.endswith(('.jpg', '.png', '.jpeg')) %}
@@ -13,4 +53,7 @@
             <a href="{{ url_for('static', filename=news.file_path.replace('static/upload/', '')) }}" download>Скачать файл</a>
         {% endif %}
     {% endif %}
+        <p></p>
+        <a href="{{ url_for('index') }}">Назад к списку</a>
+    </div>
 {% endblock %}
