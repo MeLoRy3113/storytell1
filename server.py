@@ -1,10 +1,11 @@
-from flask import Flask, render_template, redirect, request, abort
+from flask import Flask, render_template, redirect, request, abort, url_for
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 import os
+from sqlalchemy.sql import func
 from werkzeug.utils import secure_filename
 from forms.news import NewsForm
 from forms.user import RegisterForm, LoginForm
-from data.news import News
+from data.news import News, Rating
 from data.users import User
 from data import db_session
 
@@ -114,16 +115,28 @@ def edit_news(id):
 
 @app.route("/")
 def index():
+    sort = request.args.get('sort', 'newest')
     db_sess = db_session.create_session()
+    
+    query = db_sess.query(News)
+    
     if current_user.is_authenticated:
-        news = db_sess.query(News).filter((News.user == current_user) | (News.is_private != True))
+        query = query.filter((News.user == current_user) | (News.is_private != True))
     else:
-        news = db_sess.query(News).filter(News.is_private != True)
+        query = query.filter(News.is_private != True)
+    
+    if sort == 'top':
+        query = query.outerjoin(Rating).group_by(News.id).order_by(
+            func.coalesce(func.sum(Rating.value), 0).desc())
+    else:
+        query = query.order_by(News.created_date.desc())
+    
+    news = query.all()
     return render_template("index.html", news=news)
 
 
 @app.route('/register', methods=['GET', 'POST'])
-def reqister():
+def register():
     form = RegisterForm()
     if form.validate_on_submit():
         if form.password.data != form.password_again.data:
@@ -156,6 +169,29 @@ def login():
         return render_template('login.html', message="Неправильный логин или пароль", form=form)
     return render_template('login.html', title='Авторизация', form=form)
 
+@app.route('/rate/<int:news_id>/<int:value>')
+@login_required
+def rate(news_id, value):
+    db_sess = db_session.create_session()
+    
+    existing = db_sess.query(Rating).filter(
+        Rating.user_id == current_user.id,
+        Rating.news_id == news_id
+    ).first()
+    
+    if existing:
+        existing.value = value
+    else:
+        rating = Rating(
+            user_id=current_user.id,
+            news_id=news_id,
+            value=value
+        )
+        db_sess.add(rating)
+    
+    db_sess.commit()
+    return redirect(request.referrer or url_for('index'))
+
 @app.route('/story/<int:id>')
 def story(id):
     db_sess = db_session.create_session()
@@ -166,11 +202,23 @@ def story(id):
 
 @app.route("/yourstorys")
 def yourstor():
+    sort = request.args.get('sort', 'newest')
     db_sess = db_session.create_session()
+    
+    query = db_sess.query(News)
+    
     if current_user.is_authenticated:
-        news = db_sess.query(News).filter((News.user == current_user) | (News.is_private != True))
+        query = query.filter((News.user == current_user) | (News.is_private != True))
     else:
-        news = db_sess.query(News).filter(News.is_private != True)
+        query = query.filter(News.is_private != True)
+    
+    if sort == 'top':
+        query = query.outerjoin(Rating).group_by(News.id).order_by(
+            func.coalesce(func.sum(Rating.value), 0).desc())
+    else:
+        query = query.order_by(News.created_date.desc())
+    
+    news = query.all()
     return render_template("yours.html", news=news)
 
 if __name__ == '__main__':
